@@ -14,14 +14,9 @@ function save(){
 server.on('connection', function(client){
 	console.log('USER CONNECTED');
 	client.setEncoding('utf8');
-	client.write('Hello User! Welcome to FridgeCheck!');
+	client.write('Hello User! Welcome to FridgeCheck!\n');
 
 	client.on('data', function(userInput){
-		var userArray = userInput.trim().split(" ");
-
-		var newUser = {fullName: "",fridge : []};
-		var fridgeAddition = {};
-
 
 
 
@@ -31,10 +26,18 @@ server.on('connection', function(client){
 		};
 
 
-		if (userArray[1] === "new") {
+
+		var userArray = userInput.trim().toLowerCase().split(" ");
+		var newUser = {fullName: "",fridge : []};
+		var fridgeAddition = {};
+
+
+		switch (userArray[1]) {
+
+			case "new":
 			function nameLookUp(nameLookUp) {
 				for(var i = 0; i < jsonEdit.length; i++) {
-					if(jsonEdit[i].fullName.toUpperCase() === nameLookUp.toUpperCase()) {
+					if(jsonEdit[i].fullName.toLowerCase() === nameLookUp.toLowerCase()) {
 						fridgeAddition.food = userArray[2];
 						fridgeAddition.amount = userArray[3];
 						fridgeAddition.typeContainer = userArray[4];
@@ -50,22 +53,19 @@ server.on('connection', function(client){
 				jsonEdit.push(newUser);
 				return;
 			}
-
 			nameLookUp(userArray[0]);
-
-
-			client.write("Thank you " + userArray[0] + ", you just added " + userArray[3] + " " + userArray[4] + " of " + userArray[2])
-
+			client.write("Thank you " + userArray[0] + ", you just added " + userArray[3] + " " + userArray[4] + " of " + userArray[2] + "\n")
 			save();
+			break;
 
-		} else if (userArray[1] === "add") {
-
-			function foodLookUp(foodLookUp) {
+			case "add":
+			function addFoodLookUp(foodLookUp) {
 				for(var i = 0; i < jsonEdit.length; i++) {
-					if(jsonEdit[i].fullName.toUpperCase() === userArray[0].toUpperCase()) {
+					if(jsonEdit[i].fullName === userArray[0]) {
 						for(var x = 0; x < jsonEdit[i].fridge.length; x++) {
-							if(jsonEdit[i].fridge[x].food.toUpperCase() === foodLookUp.toUpperCase()) {
+							if(jsonEdit[i].fridge[x].food.toLowerCase() === foodLookUp.toLowerCase()) {
 								jsonEdit[i].fridge[x].amount = parseInt(jsonEdit[i].fridge[x].amount) + parseInt(userArray[3]);
+								client.write("You have added " + userArray[3] + " " + userArray[2]) + "\n";
 								return;
 							}
 						}
@@ -73,44 +73,61 @@ server.on('connection', function(client){
 				}
 				return false;
 			}
-
-			if(foodLookUp(userArray[2]) === false) {
+			if(addFoodLookUp(userArray[2]) === false) {
 				client.write("Please add this food as new!")
 			}
-
-			client.write("You have added " + userArray[3] + " " + userArray[2]);
-
 			save();
+			break;
 
-		} else if (userArray[1] === "consumed"){
-
-			function foodLookUpTwo(foodLookUp) {
+			case "remove":
+			function removeFoodLookUp(foodLookUp) {
 				for(var i = 0; i < jsonEdit.length; i++) {
-					for(var x = 0; x < jsonEdit[i].fridge.length; x++) {
-						if(jsonEdit[i].fridge[x].food.toUpperCase() === foodLookUp.toUpperCase()) {
-							jsonEdit[i].fridge[x].amount = parseInt(jsonEdit[i].fridge[x].amount) - parseInt(userArray[3])
-							return;
+					if(jsonEdit[i].fullName.toLowerCase() === userArray[0].toLowerCase()) {
+						for(var x = 0; x < jsonEdit[i].fridge.length; x++) {
+							if(jsonEdit[i].fridge[x].food.toLowerCase() === foodLookUp.toLowerCase()) {
+								console.log(x);
+								jsonEdit[i].fridge.splice(x,1);
+								client.write("You have removed " + userArray[2] + " from your fridge\n");
+								return;
+							}
 						}
 					}
 				}
 				return false;
 			}
-
-			if(foodLookUpTwo(userArray[2]) === false) {
-				client.write("That food doesn't exist in your fridge")
+			if(removeFoodLookUp(userArray[2]) === false) {
+				client.write("That food doesn't exist in your fridge\n")
 			}
-
-			client.write("You have consumed " + userArray[3] + " " + userArray[2]);
 			save();
+			break;
 
-		} else if (userArray[1] === "fridgecheck"){
+			case "consumed":
+			function consumedFoodLookUp(foodLookUp) {
+				for(var i = 0; i < jsonEdit.length; i++) {
+					if(jsonEdit[i].fullName.toLowerCase() === userArray[0].toLowerCase()) {
+						for(var x = 0; x < jsonEdit[i].fridge.length; x++) {
+							if(jsonEdit[i].fridge[x].food.toLowerCase() === foodLookUp.toLowerCase()) {
+								jsonEdit[i].fridge[x].amount = parseInt(jsonEdit[i].fridge[x].amount) - parseInt(userArray[3])
+								client.write("You have consumed " + userArray[3] + " " + userArray[2] + "\n");
+								return;
+							}
+						}
+					}
+				}
+				return false;
+			}
+			if(consumedFoodLookUp(userArray[2]) === false) {
+				client.write("That food doesn't exist in your fridge\n")
+			}
+			save();
+			break;
 
+			case "fridgecheck":
 			var noFoods = "";
-
 			function fridgecheck(usersFridge) {
 				for(var i = 0; i < jsonEdit.length; i++) {
 					console.log(i);
-					if(jsonEdit[i].fullName.toUpperCase() === usersFridge.toUpperCase()){
+					if(jsonEdit[i].fullName.toLowerCase() === usersFridge.toLowerCase()){
 						for(var x = 0; x < jsonEdit[i].fridge.length; x++) {
 							client.write(jsonEdit[i].fridge[x].food + " " + jsonEdit[i].fridge[x].amount + "\n");
 							if(jsonEdit[i].fridge[x].amount == 0) {
@@ -122,25 +139,42 @@ server.on('connection', function(client){
 				}
 				return false;
 			}
-
 			fridgecheck(userArray[0]);
-
-			/*for (var i = 0; i < (jsonEdit.length); i++){
-				client.write(jsonEdit[i].food + " " + jsonEdit[i].amount + " " + jsonEdit[i].typeContainer)
-				if (jsonEdit[i].amount == 0) {
-					noFoods += jsonEdit[i].food + "\n";
-				}
-			}*/
 			if(noFoods.length > 0){
-				client.write("\nThe foods that you need to purhcase are:");
+				client.write("\nThe foods that you need to purhcase are:\n");
 				client.write(noFoods + "\n");
 			}
+			break;
 
-		} else {
+			case "delete":
+			function deleteUser(deleteUser) {
+				for(var i = 0; i < jsonEdit.length; i++) {
+					if(jsonEdit[i].fullName.toLowerCase() === deleteUser.toLowerCase()){
+						client.write("\nI am sorry you want to leave us " + userArray[0] + " we hope to see you again soon!\n")
+						var deleteNumber = deleteUser(userArray[0]);
+						jsonEdit.splice(deleteNumber, 1);
+						save();
+						return i;
+					}
+				}
+				return false;
+			}
+			if (deleteUser(userArray[0]) === false) {
+				client.write("\nHello User, no one using this app goes by that name, please try again!\n")
+			}
+			break;
 
-			client.write("Hi user! Unfrotunately you did not enter the proper words, please refer to the users manual for more information.")
-		}
+			case "users":
+			var usersList = [];
+			for(var i = 0; i < jsonEdit.length; i++) {
+				client.write(jsonEdit[i].fullName + "\n")
+			}
+			break;
 
+			default:
+			client.write("\nHi user! Unfrotunately you did not enter the proper words, please refer to the users manual for more information.\n")
+			break;
+		};
 	});
 });
 
