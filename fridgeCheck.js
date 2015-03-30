@@ -61,7 +61,7 @@ server.on('connection', function(client){
 			case "add":
 			function addFoodLookUp(foodLookUp) {
 				for(var i = 0; i < jsonEdit.length; i++) {
-					if(jsonEdit[i].fullName === userArray[0]) {
+					if(jsonEdit[i].fullName.toLowerCase() === userArray[0].toLowerCase()) {
 						for(var x = 0; x < jsonEdit[i].fridge.length; x++) {
 							if(jsonEdit[i].fridge[x].food.toLowerCase() === foodLookUp.toLowerCase()) {
 								jsonEdit[i].fridge[x].amount = parseInt(jsonEdit[i].fridge[x].amount) + parseInt(userArray[3]);
@@ -74,7 +74,7 @@ server.on('connection', function(client){
 				return false;
 			}
 			if(addFoodLookUp(userArray[2]) === false) {
-				client.write("Please add this food as new!")
+				client.write("Please add this food as new!\n")
 			}
 			save();
 			break;
@@ -151,10 +151,8 @@ server.on('connection', function(client){
 				for(var i = 0; i < jsonEdit.length; i++) {
 					if(jsonEdit[i].fullName.toLowerCase() === deleteUser.toLowerCase()){
 						client.write("\nI am sorry you want to leave us " + userArray[0] + " we hope to see you again soon!\n")
-						var deleteNumber = deleteUser(userArray[0]);
-						jsonEdit.splice(deleteNumber, 1);
-						save();
-						return i;
+						jsonEdit.splice(i, 1);
+						return;
 					}
 				}
 				return false;
@@ -162,6 +160,7 @@ server.on('connection', function(client){
 			if (deleteUser(userArray[0]) === false) {
 				client.write("\nHello User, no one using this app goes by that name, please try again!\n")
 			}
+			save();
 			break;
 
 			case "users":
@@ -171,8 +170,17 @@ server.on('connection', function(client){
 			}
 			break;
 
+			case "exit":
+			client.end();
+			break;
+
+			case "manual":
+			client.write("\nNew User? or putting a new food to your fridge\n`your name` new `food` `amount` `container type`\n\n`your name` e.g bob\n`food` e.g. beer\n`amount` e.g. 30\n`container type` e.g. cans\n\nAdding more of an exisiting food?\n`your name` add `food` `amount`\n\nConsumed some food?\n`your name` consumed `food` `amount`\n\nNo longer want a food in your fridge?\n`your name` remove `food`\n\nWant to check the contents of your fridge or others?\n`your name` fridgecheck\n\nWant to delete yourself?\n`your name` delete\n\nSee all the users?\ncheck users\n\nWant to exit the program?\nuser exit\n")
+
+			break;
+
 			default:
-			client.write("\nHi user! Unfrotunately you did not enter the proper words, please refer to the users manual for more information.\n")
+			client.write("\nHi user! Unfortunately you did not enter the proper words, please refer to the `user manual` for more information.\n")
 			break;
 		};
 	});
